@@ -5,13 +5,13 @@ vi.mock("../lib/decode.js", () => ({ decodeImage: vi.fn() }));
 vi.mock("../lib/opencv.js", () => ({
   isOpenCVLoaded: vi.fn(() => true),
   loadOpenCV: vi.fn(async () => ({ cv: {} })),
-  detectQuad: vi.fn(),
+  detectCard: vi.fn(),
 }));
 vi.mock("../lib/classify.js", () => ({ classifyCard: vi.fn() }));
 vi.mock("../lib/orient.js", () => ({ detectOrientation: vi.fn() }));
 
 const { decodeImage } = await import("../lib/decode.js");
-const { detectQuad, loadOpenCV } = await import("../lib/opencv.js");
+const { detectCard, loadOpenCV } = await import("../lib/opencv.js");
 const { classifyCard } = await import("../lib/classify.js");
 const { detectOrientation } = await import("../lib/orient.js");
 const { createAppStore } = await import("./index.js");
@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   store = createAppStore();
   decodeImage.mockImplementation(async () => bitmap());
-  detectQuad.mockReturnValue(corners);
+  detectCard.mockReturnValue({ corners, laminated: null });
   classifyCard.mockReturnValue({ aspect: "license", kind: "駕照", ratio: 1.42, features: {} });
   detectOrientation.mockReturnValue({ turns: 0, score: 0.5 });
 });
@@ -42,13 +42,28 @@ describe("addFiles", () => {
     expect(items(store)).toHaveLength(2);
     expect(a).toMatchObject({ name: "a.jpg", status: "ready", width: 100, detection: "done", corners, aspect: "license" });
     expect(b.status).toBe("ready");
-    expect(detectQuad).toHaveBeenCalledTimes(2);
+    expect(detectCard).toHaveBeenCalledTimes(2);
   });
 
   it("keeps only serializable data in the store", async () => {
     await store.dispatch(addFiles([file("a.jpg")]));
     expect(() => JSON.parse(JSON.stringify(store.getState()))).not.toThrow();
     expect(JSON.parse(JSON.stringify(store.getState()))).toEqual(store.getState());
+  });
+
+  it("crops a laminated ID card to its lamination edge", async () => {
+    const laminated = corners.map((p) => ({ x: p.x - 3, y: p.y - 3 }));
+    detectCard.mockReturnValue({ corners, laminated });
+    classifyCard.mockReturnValue({ aspect: "id1", kind: "身分證", ratio: 1.66, features: {} });
+    await store.dispatch(addFiles([file("a.jpg")]));
+    expect(items(store)[0].corners).toEqual(laminated);
+  });
+
+  it("ignores the lamination fit for other card types", async () => {
+    detectCard.mockReturnValue({ corners, laminated: corners.map((p) => ({ x: p.x - 3, y: p.y - 3 })) });
+    classifyCard.mockReturnValue({ aspect: "id1", kind: "健保卡／晶片卡", ratio: 1.6, features: {} });
+    await store.dispatch(addFiles([file("a.jpg")]));
+    expect(items(store)[0].corners).toEqual(corners);
   });
 
   it("turns the card upright by rotating the corners", async () => {
@@ -78,11 +93,11 @@ describe("addFiles", () => {
     store.dispatch(settingChanged({ key: "autoCrop", value: false }));
     await store.dispatch(addFiles([file("a.jpg")]));
     expect(items(store)[0]).toMatchObject({ status: "ready", detection: "idle", corners: null });
-    expect(detectQuad).not.toHaveBeenCalled();
+    expect(detectCard).not.toHaveBeenCalled();
   });
 
   it("leaves the photo uncropped when no card is found", async () => {
-    detectQuad.mockReturnValue(null);
+    detectCard.mockReturnValue({ corners: null, laminated: null });
     await store.dispatch(addFiles([file("a.jpg")]));
     expect(items(store)[0]).toMatchObject({ detection: "done", detected: null, corners: null });
     expect(classifyCard).not.toHaveBeenCalled();
@@ -146,7 +161,7 @@ describe("editor flow", () => {
   it("tells the user when re-detection finds nothing", async () => {
     await store.dispatch(addFiles([file("a.jpg")]));
     store.dispatch(openEditor(items(store)[0].id));
-    detectQuad.mockReturnValue(null);
+    detectCard.mockReturnValue({ corners: null, laminated: null });
     await store.dispatch(redetectInEditor());
     expect(store.getState().editor.status).toBe("notFound");
   });

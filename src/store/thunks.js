@@ -7,7 +7,7 @@ import { classifyCard } from "../lib/classify.js";
 import { decodeImage } from "../lib/decode.js";
 import { fullCorners, rotateCorners } from "../lib/geometry.js";
 import { clearImages, getOriginal, getSource, removeImage, setOriginal } from "../lib/imageCache.js";
-import { detectQuad, isOpenCVLoaded, loadOpenCV } from "../lib/opencv.js";
+import { detectCard, isOpenCVLoaded, loadOpenCV } from "../lib/opencv.js";
 import { detectOrientation } from "../lib/orient.js";
 import { outputName, renderToBlob, triggerDownload } from "../lib/watermark.js";
 import {
@@ -44,8 +44,15 @@ export const detectItem = (id, { apply }) => async (dispatch, getState) => {
     const { cv } = await loadOpenCV();
     const bitmap = getOriginal(id);
     if (!bitmap) return null;
-    let corners = detectQuad(cv, bitmap);
-    const guess = corners ? classifyCard(bitmap, corners) : null;
+    const found = detectCard(cv, bitmap);
+    let corners = found.corners;
+    let guess = corners ? classifyCard(bitmap, corners) : null;
+    // The photo fits a laminated ID card: crop the whole card, lamination included, as long
+    // as it still looks like an ID card (no chip, not a yellow license)
+    if (found.laminated) {
+      const idGuess = classifyCard(bitmap, found.laminated);
+      if (idGuess.kind === "身分證") { corners = found.laminated; guess = idGuess; }
+    }
     const { settings } = getState();
     // Only known card types have a fixed landscape layout to orient by
     if (corners && settings.autoRotate && CARD_SIZES[pickAspect(settings.cardType, guess)]) {

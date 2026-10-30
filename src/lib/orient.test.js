@@ -37,6 +37,9 @@ const nhi = card([[GOLD, 0.1, 0.35, 0.25, 0.6], [SKIN, 0.7, 0.45, 0.9, 0.85]]);
 const idFront = card([[PINK, 0, 0, 1, 1], [RED, 0.1, 0.07, 0.27, 0.26], [PHOTO_BG, 0.7, 0.22, 0.95, 0.78], [SKIN, 0.76, 0.35, 0.89, 0.62]]);
 const license = card([[RED, 0.3, 0.05, 0.45, 0.25], [SKIN, 0.72, 0.1, 0.92, 0.55]]);
 const idBack = card([]);
+// ID back: barcode (vertical bars) at the bottom left
+const BAR = [30, 30, 30];
+const idBackBarcode = card(Array.from({ length: 14 }, (_, i) => [BAR, 0.08 + i * 0.03, 0.7, 0.08 + i * 0.03 + 0.015, 0.9]));
 
 describe("orientationScore", () => {
   it("is positive for upright cards", () => {
@@ -66,6 +69,13 @@ describe("orientationScore", () => {
     expect(up.cues.face).toBeGreaterThan(0);
     expect(up.score).toBeGreaterThan(0.1);
     expect(orientationScore(flip(idFront), W, H).score).toBeLessThan(-0.1);
+  });
+
+  it("reads the ID back from its barcode", () => {
+    const up = orientationScore(idBackBarcode, W, H);
+    expect(up.cues.barcode).toBeGreaterThan(0);
+    expect(up.score).toBeGreaterThan(0.05);
+    expect(orientationScore(flip(idBackBarcode), W, H).score).toBeLessThan(-0.05);
   });
 
   it("has no opinion about a featureless card", () => {

@@ -19,8 +19,8 @@ export function fullCorners(width, height, inset = 0) {
   return [{ x: mx, y: my }, { x: width - mx, y: my }, { x: width - mx, y: height - my }, { x: mx, y: height - my }];
 }
 
-// Solve the 8x8 linear system (Gaussian elimination)
-function solve(A, b) {
+// Solve the n x n linear system A x = b (Gaussian elimination with partial pivoting)
+export function solve(A, b) {
   const n = b.length;
   const M = A.map((row, i) => [...row, b[i]]);
   for (let col = 0; col < n; col++) {
@@ -37,7 +37,7 @@ function solve(A, b) {
 }
 
 // Homography that maps the four `from` points onto the four `to` points
-function homography(from, to) {
+export function homography(from, to) {
   const A = [], b = [];
   for (let i = 0; i < 4; i++) {
     const { x, y } = from[i], { x: u, y: v } = to[i];
@@ -45,6 +45,21 @@ function homography(from, to) {
     A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
   }
   return [...solve(A, b), 1];
+}
+
+export function applyHomography(H, { x, y }) {
+  const den = H[6] * x + H[7] * y + H[8];
+  return { x: (H[0] * x + H[1] * y + H[2]) / den, y: (H[3] * x + H[4] * y + H[5]) / den };
+}
+
+// Shoelace area of a polygon
+export function polygonArea(pts) {
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[(i + 1) % pts.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return Math.abs(a) / 2;
 }
 
 // Output size in px. sizes = real card sizes in mm (from cardSizes()); null keeps the

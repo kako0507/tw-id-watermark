@@ -4,11 +4,13 @@ import { warp } from "./geometry.js";
 // - health / credit cards: gold chip on the left
 // - ID front, health card, driver's license: portrait photo on the right
 // - driver's license seal, ID flag: red block near the top
-const WEIGHTS = { chip: 3, face: 1, red: 2 };
+// - ID back: barcode at the bottom left (vertical bars: brightness changes left-right only)
+const WEIGHTS = { chip: 3, face: 1, red: 2, barcode: 2 };
 // Below this the cues are too weak to justify flipping an already landscape card
 export const MIN_CONFIDENCE = 0.05;
 
-const SAMPLE_WIDTH = 240;
+// Wide enough that the ID's barcode bars stay apart
+const SAMPLE_WIDTH = 360;
 
 function hueOf(r, g, b, max, delta) {
   if (!delta) return 0;
@@ -25,6 +27,10 @@ export function orientationScore(data, W, H) {
   // [hits, total] per region; "a" regions vote for upright, "b" regions (mirrored) against
   const acc = { chipA: [0, 0], chipB: [0, 0], faceA: [0, 0], faceB: [0, 0], redA: [0, 0], redB: [0, 0] };
   const add = (key, hit) => { acc[key][1]++; if (hit) acc[key][0]++; };
+  // Barcode: horizontal minus vertical brightness change, bottom-left vs (mirrored) top-right
+  const lum = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) lum[i] = 0.3 * data[i * 4] + 0.59 * data[i * 4 + 1] + 0.11 * data[i * 4 + 2];
+  const bars = { a: [0, 0], b: [0, 0] };
 
   for (let y = 0; y < H; y++) {
     const fy = y / H;
@@ -49,6 +55,16 @@ export function orientationScore(data, W, H) {
       if (fx >= 0.05 && fx < 0.35 && fy >= 0.1 && fy < 0.8) add("faceB", skin);
       if (fy < 0.4) add("redA", red);
       else if (fy >= 0.6) add("redB", red);
+
+      if (x > 0 && y > 0 && x < W - 1 && y < H - 1) {
+        const region = fx >= 0.05 && fx < 0.55 && fy >= 0.62 && fy < 0.95 ? bars.a
+          : fx >= 0.45 && fx < 0.95 && fy >= 0.05 && fy < 0.38 ? bars.b : null;
+        if (region) {
+          const j = y * W + x;
+          region[0] += (Math.abs(lum[j + 1] - lum[j - 1]) - Math.abs(lum[j + W] - lum[j - W])) / 255;
+          region[1]++;
+        }
+      }
     }
   }
   const frac = ([hits, total]) => (total ? hits / total : 0);
@@ -56,6 +72,7 @@ export function orientationScore(data, W, H) {
     chip: frac(acc.chipA) - frac(acc.chipB),
     face: frac(acc.faceA) - frac(acc.faceB),
     red: frac(acc.redA) - frac(acc.redB),
+    barcode: frac(bars.a) - frac(bars.b),
   };
   const score = Object.entries(WEIGHTS).reduce((sum, [k, w]) => sum + w * cues[k], 0);
   return { score, cues };

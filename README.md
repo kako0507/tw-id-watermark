@@ -61,7 +61,17 @@ npm run test:e2e  # 執行 e2e 測試 (Playwright)
 
 ### e2e 測試
 
-e2e 測試會在瀏覽器裡產生假的健保卡、駕照、身分證照片（各轉 0°/90°/180°/270°），驗證證件會被偵測、判斷類型並轉正。測試資料都是程式產生的，不需要也不會用到真的證件照片。
+e2e 測試有兩組測試資料，都不含真實個資：
+
+- **程式產生的假證件**：在瀏覽器裡畫出假的健保卡、駕照、身分證（各轉 0°/90°/180°/270°），驗證證件會被偵測、判斷類型並轉正。
+- **身分證樣本照片**：`e2e/fixtures/photos/`，用內政部公開的身分證正反面樣本（`e2e/fixtures/specimens/`）合成，加上透明護貝、放在木頭桌與淺灰桌上、加透視並轉四個方向。`manifest.json` 記錄每張照片護貝四個角的真實位置，測試會比對裁切位置和方向是否正確。
+
+樣本照片用 **Git LFS** 儲存，clone 之後要先安裝 [Git LFS](https://git-lfs.com/) 並執行 `git lfs pull`。要重新產生樣本照片：
+
+```bash
+pip install opencv-python-headless numpy
+python scripts/make_e2e_photos.py
+```
 
 - 第一次執行要先下載瀏覽器：`npx playwright install chromium`。也可以改用電腦上已安裝的瀏覽器，不用下載：`PW_CHANNEL=msedge npm run test:e2e`（或 `chrome`）。
 - 想用自己的證件照片測試時，把照片放在專案**以外**的資料夾，再設定 `E2E_PHOTOS_DIR`：

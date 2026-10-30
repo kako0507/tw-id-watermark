@@ -1,5 +1,6 @@
 import { nearestCard } from "./cards.js";
-import { dist, orderCorners } from "./geometry.js";
+import { dist, orderCorners, polygonArea } from "./geometry.js";
+import { bestLaminatedId, refineQuad, sobel } from "./refine.js";
 
 // OpenCV.js is ~10MB, so it is loaded from a CDN on first detection instead of bundled
 const OPENCV_URL = "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js";
@@ -40,8 +41,11 @@ export function loadOpenCV() {
   return cvLoader;
 }
 
-// Find the card's four corners in the photo; null when none is found
-export function detectQuad(cv, source) {
+// Find the card in the photo.
+// Returns { corners, laminated }: the card's four corners (null when none is found), and the
+// lamination's corners when the photo fits a laminated ID card (paper card inside a plastic
+// lamination, see refine.js), otherwise null
+export function detectCard(cv, source) {
   const scale = Math.min(1, 800 / Math.max(source.width, source.height));
   const w = Math.round(source.width * scale), h = Math.round(source.height * scale);
   const small = document.createElement("canvas");
@@ -56,9 +60,9 @@ export function detectQuad(cv, source) {
   const imgArea = w * h;
   const margin = Math.max(w, h) * 0.015;
   const onBorder = (p) => p.x < margin || p.y < margin || p.x > w - margin || p.y > h - margin;
-  let best = null;
+  const candidates = [];
 
-  // Collect quad candidates from the binary image; score = area x closeness to a card ratio
+  // Collect rough quad candidates from the binary image
   const collect = () => {
     const contours = new cv.MatVector(), hierarchy = new cv.Mat();
     cv.findContours(bin, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
@@ -78,16 +82,12 @@ export function detectQuad(cv, source) {
           const fill = pts ? cv.contourArea(approx) / area : 0;
           approx.delete();
           if (!pts) continue;
-          // The quad must nearly fill the shape; otherwise it is forced (e.g. a corner cut out by the photo)
-          if (fill < 0.93) break;
+          // The quad must nearly fill the shape; otherwise it is forced (e.g. a corner cut out by the
+          // photo). Kept loose: edge refinement and scoring below reject poor quads anyway
+          if (fill < 0.85) break;
           // Two or more corners on the photo edge usually mean the frame or a sleeve, not the card
           if (pts.filter(onBorder).length >= 2) break;
-          const c = orderCorners(pts);
-          const ew = (dist(c[0], c[1]) + dist(c[3], c[2])) / 2;
-          const eh = (dist(c[0], c[3]) + dist(c[1], c[2])) / 2;
-          const ratio = Math.max(ew, eh) / Math.min(ew, eh);
-          const score = area * Math.exp(-1.5 * nearestCard(ratio).diff);
-          if (!best || score > best.score) best = { score, pts: c };
+          candidates.push(orderCorners(pts));
           break;
         }
       }
@@ -98,15 +98,22 @@ export function detectQuad(cv, source) {
     hierarchy.delete();
   };
 
+  let grad;
   try {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
+    grad = sobel(blur.data, w, h);
     // Method 1: edge detection at several thresholds
     for (const [lo, hi] of [[30, 90], [50, 150], [80, 220]]) {
       cv.Canny(blur, bin, lo, hi);
       cv.morphologyEx(bin, bin, cv.MORPH_CLOSE, kernel);
       collect();
     }
+    // Low-contrast photos (light card on a light table): faint edges with gaps, so use a
+    // lower threshold and close wider gaps
+    cv.Canny(blur, bin, 20, 60);
+    cv.morphologyEx(bin, bin, cv.MORPH_CLOSE, keep(cv.Mat.ones(9, 9, cv.CV_8U)));
+    collect();
     // Method 2: brightness segmentation (cards are usually lighter than the desk; try both)
     // Method 3: chroma segmentation max(RGB)-min(RGB), good for tinted cards on grey/silver surfaces
     const chroma = keep(new cv.Mat(h, w, cv.CV_8UC1));
@@ -126,5 +133,26 @@ export function detectQuad(cv, source) {
   } finally {
     mats.forEach((m) => m.delete());
   }
-  return best ? best.pts.map((p) => ({ x: p.x / scale, y: p.y / scale })) : null;
+
+  // Contour corners are a few px off (rounded corners, thick edge bands), so snap every
+  // candidate to the real edges first. Score = area x closeness to a card ratio x how much
+  // of the outline sits on real edges; quads mixing the paper card and the lamination lose
+  let best = null;
+  const refined = [];
+  for (const rough of candidates) {
+    const { corners, support } = refineQuad(grad, rough);
+    refined.push(corners);
+    const c = corners.map((p) => ({ x: Math.min(Math.max(p.x, 0), w), y: Math.min(Math.max(p.y, 0), h) }));
+    const area = polygonArea(c);
+    if (area < imgArea * 0.15) continue;
+    const ew = (dist(c[0], c[1]) + dist(c[3], c[2])) / 2;
+    const eh = (dist(c[0], c[3]) + dist(c[1], c[2])) / 2;
+    const ratio = Math.max(ew, eh) / Math.min(ew, eh);
+    const fit = support.reduce((s, v) => s + v, 0) / 4;
+    const score = area * Math.exp(-1.5 * nearestCard(ratio).diff) * fit * fit;
+    if (!best || score > best.score) best = { score, corners: c };
+  }
+  const toSource = (pts) => pts.map((p) => ({ x: Math.min(Math.max(p.x, 0), w) / scale, y: Math.min(Math.max(p.y, 0), h) / scale }));
+  const id = bestLaminatedId(grad, refined);
+  return { corners: best ? toSource(best.corners) : null, laminated: id ? toSource(id.outer) : null };
 }
