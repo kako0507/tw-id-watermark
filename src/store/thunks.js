@@ -9,7 +9,8 @@ import { fullCorners, rotateCorners } from "../lib/geometry.js";
 import { clearImages, getOriginal, getSource, removeImage, setOriginal } from "../lib/imageCache.js";
 import { detectCard, isOpenCVLoaded, loadOpenCV } from "../lib/opencv.js";
 import { detectOrientation } from "../lib/orient.js";
-import { outputName, renderToBlob, triggerDownload } from "../lib/watermark.js";
+import { PDF_NAME, buildPdf, printSizeMm } from "../lib/print.js";
+import { ensureFont, outputName, renderToBlob, renderWatermark, triggerDownload } from "../lib/watermark.js";
 import {
   detectionFailed, detectionStarted, detectionSucceeded, itemAdded, itemDecoded, itemFailed,
   itemRemoved, itemsCleared, selectAllItems, selectItemById,
@@ -126,4 +127,21 @@ export const downloadAll = () => async (_, getState) => {
     await downloadOne(item, state.settings);
     await new Promise((r) => setTimeout(r, 300));  // Small gap so the browser does not block consecutive downloads
   }
+};
+
+// All cards, watermarked, on A4 pages at their real size (print at 100% / "actual size")
+export const exportPdf = () => async (_, getState) => {
+  const { settings } = getState();
+  await ensureFont(settings.text);
+  const cards = [];
+  for (const item of selectAllItems(getState())) {
+    if (item.status !== "ready") continue;
+    const source = getSource(item, settings);
+    if (!source) continue;
+    const canvas = document.createElement("canvas");
+    renderWatermark(canvas, source, settings);
+    const [w, h] = printSizeMm(item, settings, canvas.width, canvas.height);
+    cards.push({ canvas, w, h });
+  }
+  if (cards.length) triggerDownload(await buildPdf(cards), PDF_NAME);
 };

@@ -121,7 +121,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .drop input { display: none; }
 .toolbar { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin: 16px 0 12px; flex-wrap: wrap; }
 .toolbar .count { color: var(--muted); }
-.toolbar .actions { display: flex; gap: 8px; }
+.toolbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.print-hint { margin: -4px 0 12px; font-size: 13px; color: var(--muted); }
 .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .card canvas { display: block; width: 100%; height: auto; background: var(--drop-bg); }
