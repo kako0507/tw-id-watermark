@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CARD_SIZES } from "./cards.js";
-import { fullCorners, marginPx, orderCorners, outputSize } from "./geometry.js";
+import { fullCorners, marginPx, orderCorners, outputSize, rotateCorners } from "./geometry.js";
 
 // An 800 x 400 axis-aligned quad (ratio 2:1) in TL, TR, BR, BL order
 const quad = [{ x: 100, y: 100 }, { x: 900, y: 100 }, { x: 900, y: 500 }, { x: 100, y: 500 }];
@@ -14,6 +14,31 @@ describe("orderCorners", () => {
   it("handles a tilted card with perspective", () => {
     const tilted = [{ x: 60, y: 40 }, { x: 500, y: 90 }, { x: 470, y: 350 }, { x: 30, y: 300 }];
     expect(orderCorners([tilted[2], tilted[3], tilted[1], tilted[0]])).toEqual(tilted);
+  });
+});
+
+describe("rotateCorners", () => {
+  it("makes the next corner the top-left for each quarter turn", () => {
+    expect(rotateCorners(quad, 0)).toEqual(quad);
+    expect(rotateCorners(quad, 1)).toEqual([quad[1], quad[2], quad[3], quad[0]]);
+    expect(rotateCorners(quad, 2)).toEqual([quad[2], quad[3], quad[0], quad[1]]);
+  });
+
+  it("wraps around and accepts negative turns", () => {
+    expect(rotateCorners(quad, 4)).toEqual(quad);
+    expect(rotateCorners(quad, -1)).toEqual(rotateCorners(quad, 3));
+  });
+
+  it("turns a portrait output into landscape", () => {
+    const upright = [{ x: 0, y: 0 }, { x: 400, y: 0 }, { x: 400, y: 800 }, { x: 0, y: 800 }];
+    const [w, h] = outputSize(rotateCorners(upright, 1), null);
+    expect(w).toBeGreaterThan(h);
+  });
+
+  it("does not mutate its input", () => {
+    const copy = JSON.parse(JSON.stringify(quad));
+    rotateCorners(quad, 1);
+    expect(quad).toEqual(copy);
   });
 });
 

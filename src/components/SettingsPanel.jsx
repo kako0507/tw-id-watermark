@@ -47,6 +47,10 @@ export default function SettingsPanel() {
           <input type="checkbox" checked={s.autoCrop} onChange={(e) => set("autoCrop")(e.target.checked)} />
           加入圖片時自動偵測證件，並校正成長方形
         </label>
+        <label>
+          <input type="checkbox" checked={s.autoRotate} onChange={(e) => set("autoRotate")(e.target.checked)} />
+          自動轉正證件方向（橫放、文字朝上）
+        </label>
       </div>
       <div className="field">
         <label htmlFor="cardType">證件類型（校正後的比例）</label>

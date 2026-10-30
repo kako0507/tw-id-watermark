@@ -4,7 +4,7 @@ import { outputSize, warp } from "./geometry.js";
 // Look for visual cues: a driver's license has a pale yellow background; health and
 // credit cards have a gold chip on the left (or the right when upside down)
 function analyzeCard(source, corners) {
-  const flat = warp(source, corners, null);
+  const flat = warp(source, corners, null, 0, 480);  // small preview is enough
   const portrait = flat.height > flat.width;
   const W = 240, H = Math.round(W * Math.min(flat.width, flat.height) / Math.max(flat.width, flat.height));
   const c = document.createElement("canvas");

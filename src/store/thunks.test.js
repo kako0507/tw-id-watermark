@@ -8,10 +8,12 @@ vi.mock("../lib/opencv.js", () => ({
   detectQuad: vi.fn(),
 }));
 vi.mock("../lib/classify.js", () => ({ classifyCard: vi.fn() }));
+vi.mock("../lib/orient.js", () => ({ detectOrientation: vi.fn() }));
 
 const { decodeImage } = await import("../lib/decode.js");
 const { detectQuad, loadOpenCV } = await import("../lib/opencv.js");
 const { classifyCard } = await import("../lib/classify.js");
+const { detectOrientation } = await import("../lib/orient.js");
 const { createAppStore } = await import("./index.js");
 const { settingChanged } = await import("./settingsSlice.js");
 const { cornerDragEnded, cornerDragStarted, cornerMoved } = await import("./editorSlice.js");
@@ -30,6 +32,7 @@ beforeEach(() => {
   decodeImage.mockImplementation(async () => bitmap());
   detectQuad.mockReturnValue(corners);
   classifyCard.mockReturnValue({ aspect: "license", kind: "駕照", ratio: 1.42, features: {} });
+  detectOrientation.mockReturnValue({ turns: 0, score: 0.5 });
 });
 
 describe("addFiles", () => {
@@ -46,6 +49,29 @@ describe("addFiles", () => {
     await store.dispatch(addFiles([file("a.jpg")]));
     expect(() => JSON.parse(JSON.stringify(store.getState()))).not.toThrow();
     expect(JSON.parse(JSON.stringify(store.getState()))).toEqual(store.getState());
+  });
+
+  it("turns the card upright by rotating the corners", async () => {
+    detectOrientation.mockReturnValue({ turns: 1, score: 0.7 });
+    await store.dispatch(addFiles([file("a.jpg")]));
+    const it = items(store)[0];
+    expect(it.corners).toEqual([corners[1], corners[2], corners[3], corners[0]]);
+    expect(it.detected).toEqual(it.corners);
+  });
+
+  it("does not rotate when auto-rotate is off", async () => {
+    store.dispatch(settingChanged({ key: "autoRotate", value: false }));
+    detectOrientation.mockReturnValue({ turns: 2, score: 0.7 });
+    await store.dispatch(addFiles([file("a.jpg")]));
+    expect(items(store)[0].corners).toEqual(corners);
+    expect(detectOrientation).not.toHaveBeenCalled();
+  });
+
+  it("does not rotate cards of unknown type", async () => {
+    classifyCard.mockReturnValue({ aspect: "points", kind: null, ratio: 1.9, features: {} });
+    await store.dispatch(addFiles([file("a.jpg")]));
+    expect(detectOrientation).not.toHaveBeenCalled();
+    expect(items(store)[0].corners).toEqual(corners);
   });
 
   it("skips detection when auto-crop is off", async () => {

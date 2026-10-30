@@ -49,15 +49,22 @@ function homography(from, to) {
 
 // Output size in px. sizes = real card sizes in mm (from cardSizes()); null keeps the
 // ratio measured from the four corners. Orientation follows the photo
-export function outputSize(c, sizes) {
+export function outputSize(c, sizes, maxLong = MAX_OUTPUT) {
   let w = Math.max(dist(c[0], c[1]), dist(c[3], c[2]));
   let h = Math.max(dist(c[0], c[3]), dist(c[1], c[2]));
   if (sizes) {
     const { ratio } = cardRatio(sizes, Math.max(w, h) / Math.min(w, h));
     if (w >= h) h = w / ratio; else w = h / ratio;
   }
-  const s = Math.min(1, MAX_OUTPUT / Math.max(w, h));
+  const s = Math.min(1, maxLong / Math.max(w, h));
   return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
+}
+
+// Each quarter turn makes the next corner the top-left, which rotates the corrected
+// output 90° counter-clockwise. turns may be any integer
+export function rotateCorners(corners, turns) {
+  const k = ((turns % 4) + 4) % 4;
+  return corners.slice(k).concat(corners.slice(0, k));
 }
 
 // Border in px for a margin in millimetres, scaled by the card's real long side
@@ -68,8 +75,9 @@ export function marginPx(cw, ch, sizes, marginMm) {
 
 // Perspective correction: map each output pixel back into the source and sample bilinearly
 // marginMm = extra border around the card in millimetres; the card's own aspect ratio is unaffected
-export function warp(source, corners, sizes, marginMm = 0) {
-  const [cw, ch] = outputSize(corners, sizes);
+// maxLong caps the output's long side (small values give a fast preview for analysis)
+export function warp(source, corners, sizes, marginMm = 0, maxLong = MAX_OUTPUT) {
+  const [cw, ch] = outputSize(corners, sizes, maxLong);
   const pad = marginPx(cw, ch, sizes, marginMm);
   const ow = cw + pad * 2, oh = ch + pad * 2;
   const sw = source.width, sh = source.height;

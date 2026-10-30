@@ -2,12 +2,13 @@
 // Plain thunks instead of createAsyncThunk: File objects are not serializable and must
 // not end up in action meta
 import { nanoid } from "@reduxjs/toolkit";
-import { pickAspect } from "../lib/cards.js";
+import { CARD_SIZES, pickAspect } from "../lib/cards.js";
 import { classifyCard } from "../lib/classify.js";
 import { decodeImage } from "../lib/decode.js";
-import { fullCorners } from "../lib/geometry.js";
+import { fullCorners, rotateCorners } from "../lib/geometry.js";
 import { clearImages, getOriginal, getSource, removeImage, setOriginal } from "../lib/imageCache.js";
 import { detectQuad, isOpenCVLoaded, loadOpenCV } from "../lib/opencv.js";
+import { detectOrientation } from "../lib/orient.js";
 import { outputName, renderToBlob, triggerDownload } from "../lib/watermark.js";
 import {
   detectionFailed, detectionStarted, detectionSucceeded, itemAdded, itemDecoded, itemFailed,
@@ -43,9 +44,14 @@ export const detectItem = (id, { apply }) => async (dispatch, getState) => {
     const { cv } = await loadOpenCV();
     const bitmap = getOriginal(id);
     if (!bitmap) return null;
-    const corners = detectQuad(cv, bitmap);
+    let corners = detectQuad(cv, bitmap);
     const guess = corners ? classifyCard(bitmap, corners) : null;
-    dispatch(detectionSucceeded({ id, corners, guess, cardType: getState().settings.cardType, apply }));
+    const { settings } = getState();
+    // Only known card types have a fixed landscape layout to orient by
+    if (corners && settings.autoRotate && CARD_SIZES[pickAspect(settings.cardType, guess)]) {
+      corners = rotateCorners(corners, detectOrientation(bitmap, corners).turns);
+    }
+    dispatch(detectionSucceeded({ id, corners, guess, cardType: settings.cardType, apply }));
     return corners;
   } catch (err) {
     dispatch(detectionFailed({ id, error: err.message }));

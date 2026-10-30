@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export const DEFAULT_SETTINGS = {
   autoCrop: true,
+  autoRotate: true,   // Turn detected cards upright (landscape, right way up)
   cardType: "guess",  // "guess" | a CARD_SIZES key | "points"
   cropMargin: 1,      // Extra border kept around the card when cropping (mm)
   customWidth: 0,     // Custom card size (mm) used with "points"; 0 = follow the four corners
