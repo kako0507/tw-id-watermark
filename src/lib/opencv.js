@@ -1,6 +1,6 @@
 import { nearestCard } from "./cards.js";
 import { dist, orderCorners, polygonArea } from "./geometry.js";
-import { bestLaminatedId, refineQuad, sobel } from "./refine.js";
+import { bestLaminatedId, foregroundMask, refineQuad, sobel } from "./refine.js";
 
 // OpenCV.js is ~10MB, so it is loaded from a CDN on first detection instead of bundled
 const OPENCV_URL = "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js";
@@ -98,11 +98,12 @@ export function detectCard(cv, source) {
     hierarchy.delete();
   };
 
-  let grad;
+  let grad, fg;
   try {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
     grad = sobel(blur.data, w, h);
+    fg = foregroundMask(src.data, w, h);
     // Method 1: edge detection at several thresholds
     for (const [lo, hi] of [[30, 90], [50, 150], [80, 220]]) {
       cv.Canny(blur, bin, lo, hi);
@@ -140,7 +141,7 @@ export function detectCard(cv, source) {
   let best = null;
   const refined = [];
   for (const rough of candidates) {
-    const { corners, support } = refineQuad(grad, rough);
+    const { corners, support } = refineQuad(grad, rough, 20, fg);
     refined.push(corners);
     const c = corners.map((p) => ({ x: Math.min(Math.max(p.x, 0), w), y: Math.min(Math.max(p.y, 0), h) }));
     const area = polygonArea(c);

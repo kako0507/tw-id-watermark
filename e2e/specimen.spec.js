@@ -3,15 +3,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
-// Photos generated from the official ID specimens (樣本) by scripts/make_e2e_photos.py,
-// stored with Git LFS. The manifest has the true lamination corners in upright order
+// Photos generated from official card specimens (樣本) by scripts/make_e2e_photos.py,
+// stored with Git LFS. The manifest has each card's type and its true outer corners
+// (the lamination for ID cards) in upright order
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "photos");
 const manifest = JSON.parse(fs.readFileSync(path.join(DIR, "manifest.json"), "utf8"));
 
 // Allowed corner error, as a fraction of the card's long side in the photo
 const TOLERANCE = 0.025;
 
-test("finds laminated ID cards, crops to the lamination and turns them upright", async ({ page }) => {
+test("finds each card, identifies its type, crops it and turns it upright", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errors.push(m.text()); });
@@ -38,7 +39,7 @@ test("finds laminated ID cards, crops to the lamination and turns them upright",
     await test.step(`${m.file}`, async () => {
       const item = items[i];
       expect.soft(item.name).toBe(m.file);
-      expect.soft(item.guess?.kind, "classified as an ID card").toBe("身分證");
+      expect.soft(item.guess?.kind, "card type").toBe(m.kind);
       expect.soft(item.corners, "card detected").not.toBeNull();
       if (!item.corners) return;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyHomography, homography } from "./geometry.js";
-import { bestLaminatedId, fitLaminatedId, idFrame, refineQuad, sobel, stepHomography } from "./refine.js";
+import { bestLaminatedId, fitLaminatedId, foregroundMask, idFrame, refineQuad, sobel, stepHomography } from "./refine.js";
 
 const W = 400, H = 300;
 
@@ -33,6 +33,24 @@ describe("refineQuad", () => {
     const { support } = refineQuad(grad, quad(60, 50, 340, 290));  // bottom side runs through flat background
     expect(support[2]).toBe(0);
     expect(support[0]).toBeGreaterThan(0.9);
+  });
+});
+
+describe("refineQuad with a foreground mask", () => {
+  // Pale card on a grey desk with a thick black frame printed 10 px inside its edge
+  const desk = 120, card = 175, frame = 20;
+  const g = grey(desk, [[card, 60, 50, 340, 230], [frame, 70, 60, 330, 220], [card, 74, 64, 326, 216]]);
+  const rgba = new Uint8ClampedArray(W * H * 4);
+  g.forEach((v, i) => rgba.set([v, v, v, 255], i * 4));
+  const fg = foregroundMask(rgba, W, H);
+  const rough = quad(72, 62, 328, 218);  // a contour that followed the frame
+
+  it("follows the strongest edge (the frame) without a mask", () => {
+    expect(maxError(refineQuad(sobel(g, W, H), rough).corners, quad(70, 60, 330, 220))).toBeLessThan(2);
+  });
+
+  it("finds the card's own edge, where the desk ends, with a mask", () => {
+    expect(maxError(refineQuad(sobel(g, W, H), rough, 20, fg).corners, quad(60, 50, 340, 230))).toBeLessThan(1.5);
   });
 });
 

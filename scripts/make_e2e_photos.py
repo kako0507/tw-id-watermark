@@ -1,10 +1,11 @@
-"""Generate e2e test photos from the official ID card specimens (樣本).
+"""Generate e2e test photos from official card specimens (樣本).
 
-Each specimen is turned into a laminated card (translucent plastic around the paper
-card), placed on a desk with perspective, and saved in four orientations. The
-manifest records where the lamination's corners really are, in upright card order
-(top-left, top-right, bottom-right, bottom-left), so the e2e test can check both the
-crop and the orientation.
+ID cards are turned into laminated cards (translucent plastic around the paper card);
+the driver's license and health card are plain cards stretched to their real size.
+Each card is placed on a desk with perspective and saved in four orientations. The
+manifest records where the card's outer corners really are, in upright card order
+(top-left, top-right, bottom-right, bottom-left), and which card type it is, so the
+e2e test can check the crop, the orientation and the classification.
 
 Usage (from the repo root):
     pip install opencv-python-headless numpy
@@ -20,11 +21,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SPECIMENS = ROOT / "e2e" / "fixtures" / "specimens"
 OUT = ROOT / "e2e" / "fixtures" / "photos"
 
-# Boxes measured on the specimen images: (x0, y0, x1, y1) of the lamination outline and
-# of the paper card outline
+# Laminated ID cards: boxes (x0, y0, x1, y1) measured on the specimen images for the
+# lamination outline and the paper card outline.
+# Plain cards: the whole image is the card; it is stretched to the real size (mm) because
+# the specimen images are slightly cropped. kind = what the app should classify it as
 CARDS = {
-    "front": {"file": "id-front.jpg", "outer": (9, 12, 1288, 820), "paper": (54, 57, 1244, 775)},
-    "back": {"file": "id-back.jpg", "outer": (10, 14, 1187, 756), "paper": (48, 55, 1146, 715)},
+    "id-front": {"file": "id-front.jpg", "kind": "身分證", "outer": (9, 12, 1288, 820), "paper": (54, 57, 1244, 775)},
+    "id-back": {"file": "id-back.jpg", "kind": "身分證", "outer": (10, 14, 1187, 756), "paper": (48, 55, 1146, 715)},
+    "license": {"file": "license.jpg", "kind": "駕照", "size_mm": (85, 60), "radius_mm": 1},
+    "nhi": {"file": "nhi.jpg", "kind": "健保卡／晶片卡", "size_mm": (85.6, 54), "radius_mm": 3.2},
 }
 DESK = (1600, 1200)
 TURNS = [0, 1, 2, 3]  # quarter turns counter-clockwise
@@ -62,6 +67,20 @@ def laminated_card(spec):
     rgba[rim > 0, 3] = 150                                 # slightly brighter rim
     rgba[paper > 0, :3] = card[paper > 0]
     rgba[paper > 0, 3] = 255
+    return rgba
+
+
+def plain_card(spec):
+    """RGBA plain card: the specimen stretched to the real ratio, with rounded corners."""
+    img = cv2.imdecode(np.fromfile(SPECIMENS / spec["file"], np.uint8), cv2.IMREAD_COLOR)
+    wmm, hmm = spec["size_mm"]
+    h = 600
+    w = round(h * wmm / hmm)
+    card = cv2.resize(img, (w, h), interpolation=cv2.INTER_CUBIC)
+    mask = rounded_mask(w, h, (0, 0, w - 1, h - 1), round(spec["radius_mm"] * w / wmm))
+    rgba = np.zeros((h, w, 4), np.uint8)
+    rgba[..., :3] = card
+    rgba[..., 3] = mask
     return rgba
 
 
@@ -118,22 +137,23 @@ def main():
     manifest = []
     seed = 1
     for side, spec in CARDS.items():
-        card = laminated_card(spec)
+        card = laminated_card(spec) if "paper" in spec else plain_card(spec)
         for kind in ["wood", "grey"]:
             base, corners = photo(card, kind, seed)
             seed += 1
             for turns in TURNS:
                 img, pts = rotate(base, corners, turns)
-                name = f"id-{side}-{kind}-{turns * 90:03d}.jpg"
+                name = f"{side}-{kind}-{turns * 90:03d}.jpg"
                 cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 88])[1].tofile(OUT / name)
                 manifest.append({
                     "file": name,
-                    "side": side,
+                    "card": side,
+                    "kind": spec["kind"],
                     "background": kind,
                     "rotation": turns * 90,
                     "width": img.shape[1],
                     "height": img.shape[0],
-                    # Lamination corners in upright card order: TL, TR, BR, BL
+                    # Outer corners (lamination for ID cards) in upright card order: TL, TR, BR, BL
                     "corners": [[round(float(x), 1), round(float(y), 1)] for x, y in pts],
                 })
                 print("wrote", name)

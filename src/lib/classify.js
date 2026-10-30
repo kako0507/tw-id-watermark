@@ -58,7 +58,8 @@ export function classifyCard(source, corners) {
   const ratio = Math.max(w, h) / Math.min(w, h);
   const features = analyzeCard(source, corners);
   const isLicense = features.yellow > 0.3;
-  const hasChip = features.chip > 0.12;
+  // A license's yellow background also reads a little as gold, so only non-yellow cards can have a chip
+  const hasChip = !isLicense && features.chip > 0.05;
   const bonus = Math.log(1.06);
   const candidates = [
     { aspect: "id1", diff: cardRatio(CARD_SIZES.id1.sizes, ratio).diff - (hasChip ? bonus : 0) + (isLicense ? bonus : 0) },

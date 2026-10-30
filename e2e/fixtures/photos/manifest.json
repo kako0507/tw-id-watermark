@@ -1,7 +1,8 @@
 [
   {
     "file": "id-front-wood-000.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 0,
     "width": 1600,
@@ -27,7 +28,8 @@
   },
   {
     "file": "id-front-wood-090.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 90,
     "width": 1200,
@@ -53,7 +55,8 @@
   },
   {
     "file": "id-front-wood-180.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 180,
     "width": 1600,
@@ -79,7 +82,8 @@
   },
   {
     "file": "id-front-wood-270.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 270,
     "width": 1200,
@@ -105,7 +109,8 @@
   },
   {
     "file": "id-front-grey-000.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 0,
     "width": 1600,
@@ -131,7 +136,8 @@
   },
   {
     "file": "id-front-grey-090.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 90,
     "width": 1200,
@@ -157,7 +163,8 @@
   },
   {
     "file": "id-front-grey-180.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 180,
     "width": 1600,
@@ -183,7 +190,8 @@
   },
   {
     "file": "id-front-grey-270.jpg",
-    "side": "front",
+    "card": "id-front",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 270,
     "width": 1200,
@@ -209,7 +217,8 @@
   },
   {
     "file": "id-back-wood-000.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 0,
     "width": 1600,
@@ -235,7 +244,8 @@
   },
   {
     "file": "id-back-wood-090.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 90,
     "width": 1200,
@@ -261,7 +271,8 @@
   },
   {
     "file": "id-back-wood-180.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 180,
     "width": 1600,
@@ -287,7 +298,8 @@
   },
   {
     "file": "id-back-wood-270.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "wood",
     "rotation": 270,
     "width": 1200,
@@ -313,7 +325,8 @@
   },
   {
     "file": "id-back-grey-000.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 0,
     "width": 1600,
@@ -339,7 +352,8 @@
   },
   {
     "file": "id-back-grey-090.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 90,
     "width": 1200,
@@ -365,7 +379,8 @@
   },
   {
     "file": "id-back-grey-180.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 180,
     "width": 1600,
@@ -391,7 +406,8 @@
   },
   {
     "file": "id-back-grey-270.jpg",
-    "side": "back",
+    "card": "id-back",
+    "kind": "身分證",
     "background": "grey",
     "rotation": 270,
     "width": 1200,
@@ -412,6 +428,438 @@
       [
         335.6,
         360.6
+      ]
+    ]
+  },
+  {
+    "file": "license-wood-000.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "wood",
+    "rotation": 0,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        381.5,
+        216.2
+      ],
+      [
+        1349.9,
+        306.0
+      ],
+      [
+        1278.8,
+        977.7
+      ],
+      [
+        329.6,
+        909.6
+      ]
+    ]
+  },
+  {
+    "file": "license-wood-090.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "wood",
+    "rotation": 90,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        216.2,
+        1218.5
+      ],
+      [
+        306.0,
+        250.1
+      ],
+      [
+        977.7,
+        321.2
+      ],
+      [
+        909.6,
+        1270.4
+      ]
+    ]
+  },
+  {
+    "file": "license-wood-180.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "wood",
+    "rotation": 180,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        1218.5,
+        983.8
+      ],
+      [
+        250.1,
+        894.0
+      ],
+      [
+        321.2,
+        222.3
+      ],
+      [
+        1270.4,
+        290.4
+      ]
+    ]
+  },
+  {
+    "file": "license-wood-270.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "wood",
+    "rotation": 270,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        983.8,
+        381.5
+      ],
+      [
+        894.0,
+        1349.9
+      ],
+      [
+        222.3,
+        1278.8
+      ],
+      [
+        290.4,
+        329.6
+      ]
+    ]
+  },
+  {
+    "file": "license-grey-000.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "grey",
+    "rotation": 0,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        335.8,
+        291.6
+      ],
+      [
+        1267.6,
+        209.5
+      ],
+      [
+        1327.9,
+        879.5
+      ],
+      [
+        371.0,
+        960.9
+      ]
+    ]
+  },
+  {
+    "file": "license-grey-090.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "grey",
+    "rotation": 90,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        291.6,
+        1264.2
+      ],
+      [
+        209.5,
+        332.4
+      ],
+      [
+        879.5,
+        272.1
+      ],
+      [
+        960.9,
+        1229.0
+      ]
+    ]
+  },
+  {
+    "file": "license-grey-180.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "grey",
+    "rotation": 180,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        1264.2,
+        908.4
+      ],
+      [
+        332.4,
+        990.5
+      ],
+      [
+        272.1,
+        320.5
+      ],
+      [
+        1229.0,
+        239.1
+      ]
+    ]
+  },
+  {
+    "file": "license-grey-270.jpg",
+    "card": "license",
+    "kind": "駕照",
+    "background": "grey",
+    "rotation": 270,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        908.4,
+        335.8
+      ],
+      [
+        990.5,
+        1267.6
+      ],
+      [
+        320.5,
+        1327.9
+      ],
+      [
+        239.1,
+        371.0
+      ]
+    ]
+  },
+  {
+    "file": "nhi-wood-000.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "wood",
+    "rotation": 0,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        300.9,
+        257.0
+      ],
+      [
+        1244.3,
+        320.6
+      ],
+      [
+        1237.4,
+        882.8
+      ],
+      [
+        246.5,
+        889.9
+      ]
+    ]
+  },
+  {
+    "file": "nhi-wood-090.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "wood",
+    "rotation": 90,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        257.0,
+        1299.1
+      ],
+      [
+        320.6,
+        355.7
+      ],
+      [
+        882.8,
+        362.6
+      ],
+      [
+        889.9,
+        1353.5
+      ]
+    ]
+  },
+  {
+    "file": "nhi-wood-180.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "wood",
+    "rotation": 180,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        1299.1,
+        943.0
+      ],
+      [
+        355.7,
+        879.4
+      ],
+      [
+        362.6,
+        317.2
+      ],
+      [
+        1353.5,
+        310.1
+      ]
+    ]
+  },
+  {
+    "file": "nhi-wood-270.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "wood",
+    "rotation": 270,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        943.0,
+        300.9
+      ],
+      [
+        879.4,
+        1244.3
+      ],
+      [
+        317.2,
+        1237.4
+      ],
+      [
+        310.1,
+        246.5
+      ]
+    ]
+  },
+  {
+    "file": "nhi-grey-000.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "grey",
+    "rotation": 0,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        369.1,
+        243.4
+      ],
+      [
+        1312.8,
+        271.3
+      ],
+      [
+        1300.8,
+        863.0
+      ],
+      [
+        356.9,
+        886.1
+      ]
+    ]
+  },
+  {
+    "file": "nhi-grey-090.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "grey",
+    "rotation": 90,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        243.4,
+        1230.9
+      ],
+      [
+        271.3,
+        287.2
+      ],
+      [
+        863.0,
+        299.2
+      ],
+      [
+        886.1,
+        1243.1
+      ]
+    ]
+  },
+  {
+    "file": "nhi-grey-180.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "grey",
+    "rotation": 180,
+    "width": 1600,
+    "height": 1200,
+    "corners": [
+      [
+        1230.9,
+        956.6
+      ],
+      [
+        287.2,
+        928.7
+      ],
+      [
+        299.2,
+        337.0
+      ],
+      [
+        1243.1,
+        313.9
+      ]
+    ]
+  },
+  {
+    "file": "nhi-grey-270.jpg",
+    "card": "nhi",
+    "kind": "健保卡／晶片卡",
+    "background": "grey",
+    "rotation": 270,
+    "width": 1200,
+    "height": 1600,
+    "corners": [
+      [
+        956.6,
+        369.1
+      ],
+      [
+        928.7,
+        1312.8
+      ],
+      [
+        337.0,
+        1300.8
+      ],
+      [
+        313.9,
+        356.9
       ]
     ]
   }

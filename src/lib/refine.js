@@ -72,10 +72,40 @@ function cornersFromLines(lines, fallback) {
   return lines.map((l, i) => intersect(lines[(i + 3) % 4], l) || fallback[i]);
 }
 
-// For each side of the quad, look up to `radius` px either way along the side's normal for
-// the strongest edge, fit a line through those points, and report how much of the side
-// sits on a real edge (support, 0-1)
-export function refineSides(grad, quad, radius = 12, samples = 40) {
+// Pixels that clearly differ from the desk (1) or look like it (0). The desk colour is the
+// median of a ring along the photo's border, where the card usually is not; the tolerance
+// grows with how much the desk itself varies (e.g. wood grain)
+export function foregroundMask(rgba, w, h) {
+  const ring = Math.max(2, Math.round(Math.min(w, h) * 0.03));
+  const desk = [];
+  for (let y = 0; y < h; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      if (x >= ring && y >= ring && x < w - ring && y < h - ring) continue;
+      const i = (y * w + x) * 4;
+      desk.push([rgba[i], rgba[i + 1], rgba[i + 2]]);
+    }
+  }
+  const median = (values) => [...values].sort((p, q) => p - q)[values.length >> 1];
+  const bg = [0, 1, 2].map((c) => median(desk.map((p) => p[c])));
+  const distance = (r, g, b) => Math.hypot(r - bg[0], g - bg[1], b - bg[2]);
+  const tolerance = Math.max(28, 2.5 * median(desk.map((p) => distance(...p))));
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) mask[i] = distance(rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2]) > tolerance ? 1 : 0;
+  return { mask, w, h };
+}
+
+function isForeground(fg, x, y) {
+  const xi = Math.round(x), yi = Math.round(y);
+  return xi >= 0 && yi >= 0 && xi < fg.w && yi < fg.h && fg.mask[yi * fg.w + xi] === 1;
+}
+
+// For each side of the quad, look up to `radius` px either way along the side's normal
+// (which points into the card) for the card's boundary, fit a line through those points,
+// and report how much of the side sits on a real edge (support, 0-1).
+// With a foreground mask the boundary is the first place, coming from outside, where the
+// desk turns into card, so strong lines printed just inside the edge cannot pull the side
+// in. Without one, or where no such place is found, it is the strongest edge
+export function refineSides(grad, quad, radius = 12, samples = 40, fg = null) {
   return quad.map((a, i) => {
     const b = quad[(i + 1) % 4];
     const dx = b.x - a.x, dy = b.y - a.y;
@@ -85,12 +115,27 @@ export function refineSides(grad, quad, radius = 12, samples = 40) {
     for (let s = 0; s < samples; s++) {
       const t = 0.1 + 0.8 * s / (samples - 1);
       const px = a.x + dx * t, py = a.y + dy * t;
-      let bestK = 0, bestG = -1;
-      for (let k = -radius; k <= radius; k++) {
-        const g = gradAlong(grad, px + nx * k, py + ny * k, nx, ny);
-        if (g > bestG) { bestG = g; bestK = k; }
+      const inside = (k) => isForeground(fg, px + nx * k, py + ny * k);
+      let found = null;
+      if (fg) {
+        for (let k = -radius; k <= radius; k++) {
+          if (!inside(k - 2) && !inside(k - 1) && inside(k) && inside(k + 1) && inside(k + 2)) {
+            // Accept it only where the image really has an edge
+            const g = Math.max(...[-1, 0, 1].map((d) => gradAlong(grad, px + nx * (k + d), py + ny * (k + d), nx, ny)));
+            if (g >= GRAD_MIN) found = k - 0.5;
+            break;
+          }
+        }
       }
-      if (bestG >= GRAD_MIN) pts.push({ x: px + nx * bestK, y: py + ny * bestK });
+      if (found === null) {
+        let bestK = 0, bestG = -1;
+        for (let k = -radius; k <= radius; k++) {
+          const g = gradAlong(grad, px + nx * k, py + ny * k, nx, ny);
+          if (g > bestG) { bestG = g; bestK = k; }
+        }
+        if (bestG >= GRAD_MIN) found = bestK;
+      }
+      if (found !== null) pts.push({ x: px + nx * found, y: py + ny * found });
     }
     return {
       line: pts.length >= 6 ? fitLine(pts) : lineThrough(a, b),
@@ -99,9 +144,9 @@ export function refineSides(grad, quad, radius = 12, samples = 40) {
   });
 }
 
-// Snap a rough quad (TL, TR, BR, BL) to the image's edges
-export function refineQuad(grad, quad, radius = 12) {
-  const sides = refineSides(grad, quad, radius);
+// Snap a rough quad (TL, TR, BR, BL) to the card's boundary (see refineSides)
+export function refineQuad(grad, quad, radius = 12, fg = null) {
+  const sides = refineSides(grad, quad, radius, 40, fg);
   return { corners: cornersFromLines(sides.map((s) => s.line), quad), support: sides.map((s) => s.support) };
 }
 
