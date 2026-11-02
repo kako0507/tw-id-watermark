@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   customWidth: 0,     // Custom card size (mm) used with "points"; 0 = follow the four corners
   customHeight: 0,
   text: "僅供申辦XXX使用",
-  opacity: 0.5,
+  opacity: 0.2,
   color: "#ff0000",
   angle: 30,
   size: 7,            // Font size = image short side x size%
